@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/user');
 const College = require('../models/college');
 const Faculty = require('../models/faculty');
+const Message = require('../models/message');
 const ExpressError = require('../utils/ExpressError');
 const asyncHandler = require('../utils/asyncHandler');
 const { validateRequest } = require('../middleware/validation');
@@ -18,7 +19,6 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ========== USER ROUTES ==========
-
 
 // Get all users (with populated references)
 router.get('/', asyncHandler(async (req, res) => {
@@ -62,7 +62,7 @@ router.get('/:id/match', asyncHandler(async (req, res) => {
         .populate('faculty')
         .limit(15);
 
-    if (candidates.length === 0) {
+    if (candidates.length == 0) {
         return res.json({ message: "No candidates available for matching.", matches: [] });
     }
 
@@ -81,13 +81,15 @@ router.get('/:id/match', asyncHandler(async (req, res) => {
         - College: ${user.college}
         - Major: ${user.major}
         - Specialization: ${user.faculty}
-        - Year: ${user.yearOfStudy}
+        - Year: ${user.year}
 
         Candidates List: ${JSON.stringify(candidates)}
-
-        Task: Find the top 3 best matches based on academic compatibility.
-        Return ONLY a JSON array of objects with keys: "name", "matchScore" (0-100), and "reason" (one helpful sentence).
-    `;
+    
+        Task: Find the top 3 best matches based on academic compatibility. They can only match with students at the same school. 
+        In the case that there are less than 3 students from the same school, choose the next closest school. Also in that case the students at the school are by default matched.
+        Do not consider email in match score.
+        Return ONLY a JSON array of objects with keys: "name", "email", "college", "major", "matchScore" (0-100), and "reason" (one helpful sentence).
+        `;
 
     try {
         const result = await model.generateContent(prompt);
@@ -248,4 +250,59 @@ router.delete('/:id',
     })
 );
 
+// Send icebreaker message
+router.post('/:id/icebreaker', asyncHandler(async (req, res) => {
+    const { senderId, content } = req.body;
+    const receiverId = req.params.id;
+
+    // Validate input
+    if (!content || content.length > 250) {
+        throw new ExpressError('Please keep your icebreaker to 250 characters.', { status: 400 });
+    }
+
+    // Prevent sending to self
+    if (senderId == receiverId) {
+        throw new ExpressError('You cannot send a note to yourself.', { status: 400 });
+    }
+
+    const existingMessage = await Message.findOne({ 
+        sender: senderId, 
+        receiver: receiverId 
+    });
+
+    // Only allow one icebreaker per sender-receiver pair to prevent spam
+    if (existingMessage) {
+        throw new ExpressError('You have already sent an icebreaker to this student!', { status: 400 });
+    }
+
+    // Create message
+    const newMessage = await Message.create({
+        sender: senderId,
+        receiver: receiverId,
+        content: content
+    });
+
+    // Verification
+    res.status(201).json({
+        message: "Icebreaker sent successfully!",
+        data: newMessage
+    });
+}));
+
+// Get all icebreakers
+router.get('/:id/inbox', asyncHandler(async (req, res) => {
+    const messages = await Message.find({ receiver: req.params.id })
+        .populate('sender', 'name major') // Show who sent it
+        .sort({ createdAt: -1 });
+    
+    // Mark messages as "read"
+    await Message.updateMany(
+        { receiver: req.params.id, status: 'sent' },
+        { $set: { status: 'read' } }
+    );
+
+    res.json(messages);
+}));
+
 module.exports = router;
+

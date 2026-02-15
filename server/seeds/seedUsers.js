@@ -36,8 +36,6 @@ const seedUsers = async () => {
         };
 
         // Create users with proper references
-        // Create users with proper references
-        // Create users with proper references
         const users = [
             {
                 name: 'Ryan Chen',
@@ -243,15 +241,15 @@ const seedUsers = async () => {
 
         // Remove existing users
         await User.deleteMany({});
-        console.log('🗑️  Existing users removed');
+        console.log('Existing users removed');
 
         // Insert new users
         const createdUsers = await User.insertMany(users);
-        console.log(`✅ Seeded ${createdUsers.length} users successfully!`);
-        console.log(`📊 Total users: ${createdUsers.length}`);
+        console.log(`Seeded ${createdUsers.length} users successfully!`);
+        console.log(`Total users: ${createdUsers.length}`);
 
     } catch (error) {
-        console.error('❌ Error seeding users:', error);
+        console.error('Error seeding users:', error);
     }
 };
 

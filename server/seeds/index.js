@@ -11,17 +11,17 @@ const mongoDB_Dev = process.env.MONGODB_URI_DEV;
 const seedAll = async () => {
     try {
         await connectDB(mongoDB_Dev);
-        console.log('🌱 Starting database seeding...\n');
+        console.log('Starting database seeding...\n');
 
         // Order matters: colleges and faculties must be seeded before users
         await seedColleges();
         await seedFaculties();
         await seedUsers();
 
-        console.log('\n✅ All data seeded successfully!');
+        console.log('\nAll data seeded successfully!');
         process.exit(0);
     } catch (error) {
-        console.error('❌ Error during seeding:', error);
+        console.error('Error during seeding:', error);
         process.exit(1);
     }
 };

@@ -29,10 +29,10 @@ const seedColleges = async () => {
     try {
         await College.deleteMany({}); // Clear existing data
         await College.insertMany(colleges);
-        console.log('✅ Colleges seeded successfully!');
-        console.log(`📊 Total colleges: ${colleges.length}`);
+        console.log('Colleges seeded successfully!');
+        console.log(`Total colleges: ${colleges.length}`);
     } catch (error) {
-        console.error('❌ Error seeding colleges:', error);
+        console.error('Error seeding colleges:', error);
     }
 };
 

@@ -33,10 +33,10 @@ const seedFaculties = async () => {
     try {
         await Faculty.deleteMany({}); // Clear existing data
         await Faculty.insertMany(faculties);
-        console.log('✅ Faculties seeded successfully!');
-        console.log(`📊 Total faculties: ${faculties.length}`);
+        console.log('Faculties seeded successfully!');
+        console.log(`Total faculties: ${faculties.length}`);
     } catch (error) {
-        console.error('❌ Error seeding faculties:', error);
+        console.error('Error seeding faculties:', error);
     }
 };
 
